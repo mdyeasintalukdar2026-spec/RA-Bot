@@ -44,32 +44,31 @@ def bot_script():
     (function(){
         try {
             var d = document;
-            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
+            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-t"].forEach(function(i){
                 var e = d.getElementById(i);
                 if(e) e.remove();
             });
 
             var renderServerUrl = "https://ra-bot-9cq8.onrender.com";
+            var botProfileImg = "https://i.postimg.cc/j2RJqQJL/IMG-20261110-WA0088.jpg";
 
             var s = d.createElement('style');
             s.id = 'tradelens-style';
             s.innerHTML = '@keyframes tlPulseGlow {' +
-                          '0% { box-shadow: 0 0 14px #ffffff, inset 0 0 8px #ffffff; border-color: #ffffff; }' +
-                          '50% { box-shadow: 0 0 30px #22c55e, inset 0 0 15px #22c55e; border-color: #22c55e; }' +
-                          '100% { box-shadow: 0 0 14px #ffffff, inset 0 0 8px #ffffff; border-color: #ffffff; }' +
+                          '0% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
+                          '50% { box-shadow: 0 0 22px #ffffff, 0 0 40px #00f0ff; border-color: #ffffff; }' +
+                          '100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
                           '}' +
                           '@keyframes tlSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
                           '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.9; } 100% { right: 100%; opacity: 0.9; } }' +
-                          '@keyframes tlScanLeftToRight { 0% { left: 0%; opacity: 0.9; } 100% { left: 100%; opacity: 0.9; } }' +
                           '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.9; } 100% { top: 100%; opacity: 0.9; } }';
             d.head.appendChild(s);
 
             var widget = d.createElement('div');
             widget.id = 'tradelens-widget';
-            widget.style.cssText = 'position:fixed; top:130px; right:35px; width:64px; height:64px; background:#0b0f19; border:2.5px solid #38bdf8; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:2147483647; cursor:grab; animation:tlPulseGlow 3s infinite ease-in-out; font-family:sans-serif; user-select:none; box-sizing:border-box;';
+            widget.style.cssText = 'position:fixed; top:130px; right:35px; width:62px; height:62px; background:#080c16; border:2.5px solid #00f0ff; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:2147483647; cursor:grab; animation:tlPulseGlow 3s infinite ease-in-out; overflow:hidden; box-sizing:border-box;';
             
-            widget.innerHTML = '<div style="font-size:9.5px; font-weight:900; color:#38bdf8; letter-spacing:0.5px; line-height:1;">TRADE</div>' +
-                               '<div style="font-size:10.5px; font-weight:900; color:#fff; letter-spacing:0.5px; line-height:1; margin-top:2.5px;">LENS</div>';
+            widget.innerHTML = '<img src="' + botProfileImg + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%; pointer-events:none;" />';
 
             d.body.appendChild(widget);
 
@@ -117,7 +116,7 @@ def bot_script():
                     widget.style.background = isCall ? '#166534' : '#991b1b';
                     widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                     
-                    startMultiDirectionalScanning();
+                    startScanningEffect();
 
                     var timerInterval = setInterval(function(){
                         countdown--;
@@ -126,14 +125,13 @@ def bot_script():
 
                         if(countdown <= 0) {
                             clearInterval(timerInterval);
-                            removeAllScanners();
+                            removeScanningEffect();
                             triggerQuotexTrade(isCall);
 
                             setTimeout(function(){
-                                widget.style.background = '#0b0f19';
-                                widget.style.borderColor = '#38bdf8';
-                                widget.innerHTML = '<div style="font-size:9.5px; font-weight:900; color:#38bdf8; letter-spacing:0.5px; line-height:1;">TRADE</div>' +
-                                                   '<div style="font-size:10.5px; font-weight:900; color:#fff; letter-spacing:0.5px; line-height:1; margin-top:2.5px;">LENS</div>';
+                                widget.style.background = '#080c16';
+                                widget.style.borderColor = '#00f0ff';
+                                widget.innerHTML = '<img src="' + botProfileImg + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%; pointer-events:none;" />';
                                 isRunning = false;
                             }, 3500);
                         }
@@ -141,30 +139,24 @@ def bot_script():
                 });
             };
 
-            function startMultiDirectionalScanning() {
-                removeAllScanners();
+            function startScanningEffect() {
+                removeScanningEffect();
                 
-                // 1. Right to Left scanner (White, thick, high glow)
+                // ১. ডান সাইড থেকে স্ক্যানিং বিম (Right to Left)
                 var scanR = d.createElement('div');
                 scanR.id = 'tradelens-laser-r';
-                scanR.style.cssText = 'position:fixed; top:0; right:0; width:6px; height:100vh; background:linear-gradient(to left, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 2.5s linear infinite;';
+                scanR.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, #ffffff, rgba(0,240,255,0.3)); box-shadow: 0 0 15px #ffffff, 0 0 30px #00f0ff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 2s linear infinite;';
                 d.body.appendChild(scanR);
 
-                // 2. Left to Right scanner (White, thick, glowing blue-white shadow)
-                var scanL = d.createElement('div');
-                scanL.id = 'tradelens-laser-l';
-                scanL.style.cssText = 'position:fixed; top:0; left:0; width:6px; height:100vh; background:linear-gradient(to right, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff, 0 0 40px #38bdf8; z-index:2147483646; pointer-events:none; animation:tlScanLeftToRight 2.5s linear infinite;';
-                d.body.appendChild(scanL);
-
-                // 3. Top to Bottom scanner (White, thick horizontal beam with green glow)
+                // ২. উপর থেকে স্ক্যানিং বিম (Top to Bottom)
                 var scanT = d.createElement('div');
                 scanT.id = 'tradelens-laser-t';
-                scanT.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:6px; background:linear-gradient(to bottom, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff, 0 0 40px #22c55e; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 2.5s linear infinite;';
+                scanT.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, #ffffff, rgba(0,240,255,0.3)); box-shadow: 0 0 15px #ffffff, 0 0 30px #22c55e; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 2s linear infinite;';
                 d.body.appendChild(scanT);
             }
 
-            function removeAllScanners() {
-                ["tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
+            function removeScanningEffect() {
+                ["tradelens-laser-r", "tradelens-laser-t"].forEach(function(i){
                     var el = d.getElementById(i);
                     if(el) el.remove();
                 });
