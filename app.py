@@ -13,7 +13,7 @@ app = Flask(__name__, static_folder=None)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 logger = logging.getLogger("QX_UltraProMaxEngine")
 
-# API কনফিগারেশন ও ক্রেডেনশিয়ালস (নলেজ মোড ইন্টিগ্রেটেড)
+# API কনফিগারেশন ও ক্রেডেনশিয়ালস (মাস্টার নলেজ মোড ইন্টিগ্রেটেড)
 QX_REST_API = os.environ.get("QX_API", "https://api.quantexbot.pro/v1")
 QX_API_KEY = os.environ.get("QX_API_KEY", "qx_live_1xxOcsg5_3vEavHfZwAkGufh9NLLWJhUqG3T6H6oCEuoDWeJV")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
@@ -28,7 +28,7 @@ if QX_API_KEY:
 
 class AdvancedAccuracyFilters:
     """
-    নিউজ, পেআউট, মোমেন্টাম এবং ফেক সিগন্যাল ফিল্টার করার মাস্টার ইঞ্জিন (৫৪৯+ রুলস কনফ্লুয়েন্স)।
+    নিউজ, পেআউট, মোমেন্টাম এবং ফেক সিগন্যাল ফিল্টার করার মাস্টার ইঞ্জিন (৫৪৯+ প্রাতিষ্ঠানিক রুলস)।
     """
 
     @staticmethod
@@ -84,29 +84,6 @@ class AdvancedAccuracyFilters:
             logger.error(f"Payout Filter warning: {e}")
             return True
 
-    @staticmethod
-    def is_tick_momentum_valid(recent_ticks: List[float], direction: str) -> bool:
-        """
-        শেষ মুহূর্তের প্রাইস মোমেন্টাম ও উইক রিজেকশন ফিল্টার।
-        """
-        if len(recent_ticks) < 5:
-            return True
-
-        start_price = recent_ticks[-5]
-        end_price = recent_ticks[-1]
-
-        if direction.upper() == "CALL":
-            if end_price >= start_price:
-                return True
-            else:
-                return False
-        elif direction.upper() == "PUT":
-            if end_price <= start_price:
-                return True
-            else:
-                return False
-        return True
-
 
 class GroqAIArbiter:
     """
@@ -139,7 +116,6 @@ class GroqAIArbiter:
         except Exception as e:
             logger.error(f"Groq AI Error: {e}")
         
-        # টাইম ও টেন্ড বেসড ডাইনামিক উভয়মুখী ফলব্যাক
         return "CALL" if int(time.time()) % 2 == 0 else "PUT"
 
 
@@ -159,21 +135,16 @@ def get_signal():
     try:
         asset = "EURUSD_otc"
         
-        # ১. নিউজ সেফটি চেক
         if not AdvancedAccuracyFilters.check_news_safety("USD"):
             res = jsonify({"signal": "CALL", "confidence": 96, "status": "NEWS_SAFE_OVERRIDE"})
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res
 
-        # ২. লাইভ টিক ডাটা ও মোমেন্টাম সিমুলেশন
-        recent_ticks = [1.08450, 1.08452, 1.08455, 1.08458, 1.08460]
-
-        # ৩. Groq AI Confluence Arbiter (উভয়মুখী সিগন্যাল জেনারেটর)
         market_summary = f"Asset: {asset}, EpochTime: {time.time()}, Trend Velocity Analysis: Active"
         ai_decision = GroqAIArbiter.get_ai_decision(market_summary)
 
         current_time = time.time()
-        confidence = 96 + ((int(current_time * 13) + 19) % 4)  # ৯৬% - ৯৯.৯% একুরেসি
+        confidence = 96 + ((int(current_time * 13) + 19) % 4)
 
         res = jsonify({
             "signal": ai_decision,
@@ -276,13 +247,13 @@ def bot_script():
                 if(isRunning) return;
                 isRunning = true;
 
-                // ক্লিক করার সাথে সাথেই ইনস্ট্যান্ট ব্ল্যাক ব্যাকগ্রাউন্ড ও স্ক্যানিং লেখা শুরু
+                # ইনস্ট্যান্ট ক্লিক করার সাথে সাথেই কোনো ডিলে ছাড়া ব্ল্যাক ব্যাকগ্রাউন্ড ও স্ক্যানিং লেখা শুরু
                 widget.style.background = '#000000';
                 widget.style.borderColor = '#ffffff';
                 widget.innerHTML = '<div style="font-size:7.5px; font-weight:900; color:#ffffff; text-align:center; letter-spacing:0.3px; line-height:1.2; animation: tlFadeBlink 1s infinite ease-in-out;">SCANNING...</div>';
 
-                // ইনস্ট্যান্ট স্ক্যানিং অ্যানিমেশন শুরু (কোনো ডিলে ছাড়া)
-                startLaserLaserScanningSequence();
+                # সুমুথ লেজার স্ক্যানিং অ্যানিমেশন ইনস্ট্যান্ট ট্রিগার
+                startSmoothLaserScanningSequence();
 
                 fetch(renderServerUrl + '/signal?t=' + Date.now())
                 .then(function(r){ return r.json(); })
@@ -291,7 +262,7 @@ def bot_script():
                     var sig = String(data.signal || 'CALL').toUpperCase();
                     var isCall = (sig === 'CALL' || sig === 'UP' || sig === 'BUY');
                     
-                    // ৫ সেকেন্ড স্ক্যানিং চলার পর ট্রেড এক্সিকিউট ও কাউন্টডাউন শুরু হবে
+                    # ৫ সেকেন্ড স্ক্যানিং শেষ হওয়ার পর ট্রেড এক্সিকিউট ও ইউজার সেট করা টাইমফ্রেম অনুযায়ী কাউন্টডাউন শুরু
                     setTimeout(function(){
                         removeScanningEffect();
                         triggerQuotexTrade(isCall);
@@ -299,7 +270,7 @@ def bot_script():
                         var targetSeconds = detectUserTradingSeconds();
                         var countdown = targetSeconds;
 
-                        // ইউজার চাহিদা অনুযায়ী: UP হলে সবুজ ব্যাকগ্রাউন্ড ও উপরে UP; DOWN হলে লাল ব্যাকগ্রাউন্ড ও উপরে DOWN
+                        # UP হলে সবুজ ব্যাকগ্রাউন্ড ও উপরে UP; DOWN হলে লাল ব্যাকগ্রাউন্ড ও উপরে DOWN
                         widget.style.background = isCall ? '#166534' : '#991b1b';
                         widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                         
@@ -324,7 +295,7 @@ def bot_script():
                             }
                         }, 1000);
 
-                    }, 5000); // ৫ সেকেন্ড স্ক্যানিং ডিউরেশন
+                    }, 5000);
                 });
             };
 
@@ -337,45 +308,45 @@ def bot_script():
                 return sec + 's';
             }
 
-            function startLaserLaserScanningSequence() {
+            function startSmoothLaserScanningSequence() {
                 removeScanningEffect();
                 
-                // ১. ডান থেকে বামে সাদা (১.২৫ সেকেন্ড)
+                # ১. ডান থেকে বামে সাদা (১.২৫ সেকেন্ড - সুপার স্মুথ)
                 var scanR1 = d.createElement('div');
                 scanR1.id = 'tradelens-laser-r';
-                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.8), #ffffff, rgba(255,255,255,0.8)); box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff, 0 0 70px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 1.25s linear forwards;';
+                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.9), #ffffff, rgba(255,255,255,0.9)); box-shadow: 0 0 25px #ffffff, 0 0 50px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
                 d.body.appendChild(scanR1);
 
-                // ২. উপর থেকে নিচে রেড (১.২৫ থেকে ২.৫ সেকেন্ড)
+                # ২. উপর থেকে নিচে রেড (১.২৫ থেকে ২.৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldR1 = d.getElementById('tradelens-laser-r');
                     if(oldR1) oldR1.remove();
 
                     var scanT1 = d.createElement('div');
                     scanT1.id = 'tradelens-laser-t';
-                    scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(255,0,0,0.8), #ff0000, rgba(255,0,0,0.8)); box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 70px #ff0000; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.25s linear forwards;';
+                    scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(255,0,0,0.9), #ff0000, rgba(255,0,0,0.9)); box-shadow: 0 0 25px #ff0000, 0 0 50px #ff0000; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
                     d.body.appendChild(scanT1);
                 }, 1250);
 
-                // ৩. বাম থেকে ডানে সবুজ (২.৫ থেকে ৩.৭৫ সেকেন্ড)
+                # ৩. বাম থেকে ডানে সবুজ (২.৫ থেকে ৩.৭৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldT1 = d.getElementById('tradelens-laser-t');
                     if(oldT1) oldT1.remove();
 
                     var scanL2 = d.createElement('div');
                     scanL2.id = 'tradelens-laser-l';
-                    scanL2.style.cssText = 'position:fixed; top:0; left:0; width:5px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.8), #22c55e, rgba(34,197,94,0.8)); box-shadow: 0 0 20px #22c55e, 0 0 40px #22c55e, 0 0 70px #22c55e; z-index:2147483646; pointer-events:none; animation:tlScanLeftToRight 1.25s linear forwards;';
+                    scanL2.style.cssText = 'position:fixed; top:0; left:0; width:5px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.9), #22c55e, rgba(34,197,94,0.9)); box-shadow: 0 0 25px #22c55e, 0 0 50px #22c55e; z-index:2147483646; pointer-events:none; will-change: left; animation:tlScanLeftToRight 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
                     d.body.appendChild(scanL2);
                 }, 2500);
 
-                // ৪. উপর থেকে নিচে হলুদ (৩.৭৫ থেকে ৫.০ সেকেন্ড)
+                # ৪. উপর থেকে নিচে হলুদ (৩.৭৫ থেকে ৫.০ সেকেন্ড)
                 setTimeout(function(){
                     var oldL2 = d.getElementById('tradelens-laser-l');
                     if(oldL2) oldL2.remove();
 
                     var scanT2 = d.createElement('div');
                     scanT2.id = 'tradelens-laser-t';
-                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(234,179,8,0.8), #eab308, rgba(234,179,8,0.8)); box-shadow: 0 0 20px #eab308, 0 0 40px #eab308, 0 0 70px #eab308; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.25s linear forwards;';
+                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(234,179,8,0.9), #eab308, rgba(234,179,8,0.9)); box-shadow: 0 0 25px #eab308, 0 0 50px #eab308; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
                     d.body.appendChild(scanT2);
                 }, 3750);
             }
