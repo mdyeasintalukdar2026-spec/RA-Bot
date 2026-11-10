@@ -44,7 +44,7 @@ def bot_script():
     (function(){
         try {
             var d = document;
-            ["tradelens-widget", "tradelens-style", "tradelens-result-box", "tradelens-laser-scanner"].forEach(function(i){
+            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
                 var e = d.getElementById(i);
                 if(e) e.remove();
             });
@@ -54,16 +54,16 @@ def bot_script():
             var s = d.createElement('style');
             s.id = 'tradelens-style';
             s.innerHTML = '@keyframes tlPulseGlow {' +
-                          '0% { box-shadow: 0 0 12px #38bdf8, inset 0 0 6px #38bdf8; border-color: #38bdf8; }' +
-                          '50% { box-shadow: 0 0 26px #22c55e, inset 0 0 12px #22c55e; border-color: #22c55e; }' +
-                          '100% { box-shadow: 0 0 12px #38bdf8, inset 0 0 6px #38bdf8; border-color: #38bdf8; }' +
+                          '0% { box-shadow: 0 0 14px #ffffff, inset 0 0 8px #ffffff; border-color: #ffffff; }' +
+                          '50% { box-shadow: 0 0 30px #22c55e, inset 0 0 15px #22c55e; border-color: #22c55e; }' +
+                          '100% { box-shadow: 0 0 14px #ffffff, inset 0 0 8px #ffffff; border-color: #ffffff; }' +
                           '}' +
                           '@keyframes tlSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
-                          '@keyframes tlPopIn { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }' +
-                          '@keyframes tlLaserMove { 0% { left: 0%; opacity: 0.8; } 50% { opacity: 1; filter: drop-shadow(0 0 10px #22c55e); } 100% { left: 100%; opacity: 0.8; } }';
+                          '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.9; } 100% { right: 100%; opacity: 0.9; } }' +
+                          '@keyframes tlScanLeftToRight { 0% { left: 0%; opacity: 0.9; } 100% { left: 100%; opacity: 0.9; } }' +
+                          '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.9; } 100% { top: 100%; opacity: 0.9; } }';
             d.head.appendChild(s);
 
-            // একটু বড় সাইজের গোলাকার ড্র্যাগএবল উইজেট
             var widget = d.createElement('div');
             widget.id = 'tradelens-widget';
             widget.style.cssText = 'position:fixed; top:130px; right:35px; width:64px; height:64px; background:#0b0f19; border:2.5px solid #38bdf8; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:2147483647; cursor:grab; animation:tlPulseGlow 3s infinite ease-in-out; font-family:sans-serif; user-select:none; box-sizing:border-box;';
@@ -73,7 +73,6 @@ def bot_script():
 
             d.body.appendChild(widget);
 
-            // ড্র্যাগ অ্যান্ড ড্রপ ফিচার (অন্যান্য জায়গায় শিফট করার জন্য)
             var isDragging = false, startX, startY, hasMoved = false;
             widget.onmousedown = widget.ontouchstart = function(e){
                 isDragging = true; hasMoved = false;
@@ -100,15 +99,12 @@ def bot_script():
             var isRunning = false;
 
             widget.onclick = function(e) {
-                if(hasMoved) return; // ড্র্যাগ করার সময় ক্লিক ট্রিগার হবে না
+                if(hasMoved) return;
                 if(isRunning) return;
                 isRunning = true;
 
-                // স্ক্যানিং স্টেট ও লেজার স্ক্যানার ইফেক্ট চালু
-                widget.style.borderColor = '#eab308';
-                widget.innerHTML = '<div style="width:20px; height:20px; border:2.5px solid #eab308; border-top-color:transparent; border-radius:50%; animation:tlSpin 0.8s linear infinite;"></div>';
-
-                showLaserScanner();
+                widget.style.borderColor = '#ffffff';
+                widget.innerHTML = '<div style="width:20px; height:20px; border:2.5px solid #ffffff; border-top-color:transparent; border-radius:50%; animation:tlSpin 0.8s linear infinite;"></div>';
 
                 fetch(renderServerUrl + '/signal?t=' + Date.now())
                 .then(function(r){ return r.json(); })
@@ -121,6 +117,8 @@ def bot_script():
                     widget.style.background = isCall ? '#166534' : '#991b1b';
                     widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                     
+                    startMultiDirectionalScanning();
+
                     var timerInterval = setInterval(function(){
                         countdown--;
                         widget.innerHTML = '<div style="font-size:9px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + (isCall ? 'UP' : 'DOWN') + '</div>' +
@@ -128,9 +126,8 @@ def bot_script():
 
                         if(countdown <= 0) {
                             clearInterval(timerInterval);
-                            removeLaserScanner();
+                            removeAllScanners();
                             triggerQuotexTrade(isCall);
-                            showResultBox();
 
                             setTimeout(function(){
                                 widget.style.background = '#0b0f19';
@@ -144,16 +141,33 @@ def bot_script():
                 });
             };
 
-            function showLaserScanner() {
-                var scanner = d.createElement('div');
-                scanner.id = 'tradelens-laser-scanner';
-                scanner.style.cssText = 'position:fixed; top:0; width:4px; height:100vh; background:linear-gradient(to bottom, transparent, #22c55e, transparent); z-index:2147483646; pointer-events:none; animation:tlLaserMove 2s infinite ease-in-out;';
-                d.body.appendChild(scanner);
+            function startMultiDirectionalScanning() {
+                removeAllScanners();
+                
+                // 1. Right to Left scanner (White, thick, high glow)
+                var scanR = d.createElement('div');
+                scanR.id = 'tradelens-laser-r';
+                scanR.style.cssText = 'position:fixed; top:0; right:0; width:6px; height:100vh; background:linear-gradient(to left, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 2.5s linear infinite;';
+                d.body.appendChild(scanR);
+
+                // 2. Left to Right scanner (White, thick, glowing blue-white shadow)
+                var scanL = d.createElement('div');
+                scanL.id = 'tradelens-laser-l';
+                scanL.style.cssText = 'position:fixed; top:0; left:0; width:6px; height:100vh; background:linear-gradient(to right, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff, 0 0 40px #38bdf8; z-index:2147483646; pointer-events:none; animation:tlScanLeftToRight 2.5s linear infinite;';
+                d.body.appendChild(scanL);
+
+                // 3. Top to Bottom scanner (White, thick horizontal beam with green glow)
+                var scanT = d.createElement('div');
+                scanT.id = 'tradelens-laser-t';
+                scanT.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:6px; background:linear-gradient(to bottom, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff, 0 0 40px #22c55e; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 2.5s linear infinite;';
+                d.body.appendChild(scanT);
             }
 
-            function removeLaserScanner() {
-                var sc = d.getElementById('tradelens-laser-scanner');
-                if(sc) sc.remove();
+            function removeAllScanners() {
+                ["tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
+                    var el = d.getElementById(i);
+                    if(el) el.remove();
+                });
             }
 
             function triggerQuotexTrade(isCall) {
@@ -172,24 +186,6 @@ def bot_script():
                 if(targetBtn) {
                     try { targetBtn.click(); } catch(e) {}
                 }
-            }
-
-            function showResultBox() {
-                var oldRes = d.getElementById('tradelens-result-box');
-                if(oldRes) oldRes.remove();
-
-                var profit = (18 + Math.random() * 32).toFixed(2);
-                var resBox = d.createElement('div');
-                resBox.id = 'tradelens-result-box';
-                resBox.style.cssText = 'position:fixed; top:190px; right:20px; background:#064e3b; border:2px solid #22c55e; border-radius:8px; padding:9px 14px; z-index:2147483647; animation:tlPopIn 0.3s ease-out; font-family:sans-serif; box-shadow:0 4px 15px rgba(0,0,0,0.5);';
-                resBox.innerHTML = '<div style="font-size:8.5px; font-weight:bold; color:#a7f3d0; text-align:center; letter-spacing:0.5px;">RESULT (P/L)</div>' +
-                                   '<div style="font-size:14px; font-weight:900; color:#22c55e; text-align:center; margin-top:2px;">+' + profit + ' $</div>';
-
-                d.body.appendChild(resBox);
-
-                setTimeout(function(){
-                    if(resBox.parentNode) resBox.remove();
-                }, 3000);
             }
 
         } catch(e) {}
