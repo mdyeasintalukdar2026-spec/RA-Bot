@@ -57,9 +57,8 @@ def bot_script():
             s.innerHTML = '@keyframes tlPulseGlow {' +
                           '0% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
                           '50% { box-shadow: 0 0 22px #ffffff, 0 0 40px #00f0ff; border-color: #ffffff; }' +
-                          '100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #ffffff; }' +
+                          '100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
                           '}' +
-                          '@keyframes tlSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
                           '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.95; } 100% { right: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanLeftToRight { 0% { left: 0%; opacity: 0.95; } 100% { left: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.95; } 100% { top: 100%; opacity: 0.95; } }';
@@ -96,6 +95,29 @@ def bot_script():
                 widget.style.cursor = 'grab';
             };
 
+            // কোটেক্স প্ল্যাটফর্ম থেকে ইউজার সেট করা টাইম ফ্রেম ডিটেক্ট করার ফাংশন
+            function detectUserTradingSeconds() {
+                try {
+                    var inputs = d.querySelectorAll('input, div, span');
+                    for(var i = 0; i < inputs.length; i++) {
+                        var text = (inputs[i].innerText || inputs[i].value || '').trim();
+                        // যেমন "00:00:30", "00:01:00" বা শুধু সংখ্যা থাকতে পারে
+                        if(text.match(/^\\d{2}:\\d{2}:\\d{2}$/)) {
+                            var parts = text.split(':');
+                            var totalSec = parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseInt(parts[2]);
+                            if(totalSec > 0 && totalSec <= 3600) return totalSec;
+                        }
+                    }
+                    // যদি সরাসরি ইনপুটে সেকেন্ড লেখা থাকে
+                    var timeInput = d.querySelector('input[class*="time"], input[class*="timer"]');
+                    if(timeInput && timeInput.value) {
+                        var val = parseInt(timeInput.value);
+                        if(!isNaN(val) && val > 0) return val;
+                    }
+                } catch(e) {}
+                return 5; // ডিফল্ট ৫ সেকেন্ড যদি না পাওয়া যায়
+            }
+
             var isRunning = false;
 
             widget.onclick = function(e) {
@@ -103,8 +125,10 @@ def bot_script():
                 if(isRunning) return;
                 isRunning = true;
 
+                // ১. ক্লিক করার সাথে সাথে ব্যাকগ্রাউন্ড ব্ল্যাক এবং "SCANNING" লেখা
+                widget.style.background = '#000000';
                 widget.style.borderColor = '#ffffff';
-                widget.innerHTML = '<div style="width:20px; height:20px; border:2.5px solid #ffffff; border-top-color:transparent; border-radius:50%; animation:tlSpin 0.8s linear infinite;"></div>';
+                widget.innerHTML = '<div style="font-size:8px; font-weight:900; color:#ffffff; text-align:center; letter-spacing:0.3px; line-height:1.2;">SCANNING</div>';
 
                 fetch(renderServerUrl + '/signal?t=' + Date.now())
                 .then(function(r){ return r.json(); })
@@ -112,44 +136,66 @@ def bot_script():
                 .then(function(data){
                     var sig = String(data.signal || 'DOWN').toUpperCase();
                     var isCall = (sig === 'CALL' || sig === 'UP' || sig === 'BUY');
-                    var countdown = 5;
-
-                    widget.style.background = isCall ? '#166534' : '#991b1b';
-                    widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                     
+                    // স্ক্যানিং অ্যানিমেশন শুরু (৫ সেকেন্ডের স্মুথ সাইকেল)
                     startLaserLaserScanningSequence();
 
-                    var timerInterval = setInterval(function(){
-                        countdown--;
+                    // ৫ সেকেন্ড স্ক্যানিং চলার পর মূল কাউন্টডাউন শুরু হবে
+                    setTimeout(function(){
+                        removeScanningEffect();
+                        triggerQuotexTrade(isCall);
+
+                        // ইউজার সেট করা টাইম ফ্রেম ডিটেক্ট করা (সেকেন্ডে)
+                        var targetSeconds = detectUserTradingSeconds();
+                        var countdown = targetSeconds;
+
+                        widget.style.background = isCall ? '#166534' : '#991b1b';
+                        widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
+                        
                         widget.innerHTML = '<div style="font-size:9px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + (isCall ? 'UP' : 'DOWN') + '</div>' +
-                                           '<div style="font-size:11px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + countdown + 's</div>';
+                                           '<div style="font-size:10.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + formatTimeDisplay(countdown) + '</div>';
 
-                        if(countdown <= 0) {
-                            clearInterval(timerInterval);
-                            removeScanningEffect();
-                            triggerQuotexTrade(isCall);
+                        var timerInterval = setInterval(function(){
+                            countdown--;
+                            if(countdown >= 0) {
+                                widget.innerHTML = '<div style="font-size:9px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + (isCall ? 'UP' : 'DOWN') + '</div>' +
+                                                   '<div style="font-size:10.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + formatTimeDisplay(countdown) + '</div>';
+                            }
 
-                            setTimeout(function(){
-                                widget.style.background = '#080c16';
-                                widget.style.borderColor = '#00f0ff';
-                                widget.innerHTML = '<img src="' + botProfileImg + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%; pointer-events:none;" />';
-                                isRunning = false;
-                            }, 2500);
-                        }
-                    }, 1000);
+                            if(countdown <= 0) {
+                                clearInterval(timerInterval);
+                                setTimeout(function(){
+                                    widget.style.background = '#080c16';
+                                    widget.style.borderColor = '#00f0ff';
+                                    widget.innerHTML = '<img src="' + botProfileImg + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%; pointer-events:none;" />';
+                                    isRunning = false;
+                                }, 2000);
+                            }
+                        }, 1000);
+
+                    }, 5000); // ৫ সেকেন্ড স্ক্যানিং ডিউরেশন
                 });
             };
+
+            function formatTimeDisplay(sec) {
+                if(sec >= 60) {
+                    var m = Math.floor(sec / 60);
+                    var s = sec % 60;
+                    return m + 'm ' + (s > 0 ? s + 's' : '');
+                }
+                return sec + 's';
+            }
 
             function startLaserLaserScanningSequence() {
                 removeScanningEffect();
                 
-                // ১. প্রথম ১.২৫ সেকেন্ড: ডান থেকে বামে সাদা লেজার বিন (উভয় পাশে সাদা গ্লো ইফেক্ট)
+                // ১. ডান থেকে বামে সাদা (১.২৫ সেকেন্ড)
                 var scanR1 = d.createElement('div');
                 scanR1.id = 'tradelens-laser-r';
                 scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.8), #ffffff, rgba(255,255,255,0.8)); box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff, 0 0 70px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 1.25s linear forwards;';
                 d.body.appendChild(scanR1);
 
-                // ২. ১.২৫ থেকে ২.৫ সেকেন্ড: উপর থেকে নিচে রেড লেজার বিন (উভয় পাশে রেড গ্লো ইফেক্ট)
+                // ২. উপর থেকে নিচে রেড (১.২৫ থেকে ২.৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldR1 = d.getElementById('tradelens-laser-r');
                     if(oldR1) oldR1.remove();
@@ -160,7 +206,7 @@ def bot_script():
                     d.body.appendChild(scanT1);
                 }, 1250);
 
-                // ৩. ২.৫ থেকে ৩.৭৫ সেকেন্ড: বাম থেকে ডানে সবুজ (Green) লেজার বিন (উভয় পাশে সবুজ গ্লো ইফেক্ট)
+                // ৩. বাম থেকে ডানে সবুজ (২.৫ থেকে ৩.৭৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldT1 = d.getElementById('tradelens-laser-t');
                     if(oldT1) oldT1.remove();
@@ -171,7 +217,7 @@ def bot_script():
                     d.body.appendChild(scanL2);
                 }, 2500);
 
-                // ৪. ৩.৭৫ থেকে ৫.০ সেকেন্ড: উপর থেকে নিচে হলুদ (Yellow) লেজার বিন (উভয় পাশে হলুদ গ্লো ইফেক্ট)
+                // ৪. উপর থেকে নিচে হলুদ (৩.৭৫ থেকে ৫.০ সেকেন্ড)
                 setTimeout(function(){
                     var oldL2 = d.getElementById('tradelens-laser-l');
                     if(oldL2) oldL2.remove();
