@@ -44,7 +44,7 @@ def bot_script():
     (function(){
         try {
             var d = document;
-            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-t"].forEach(function(i){
+            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
                 var e = d.getElementById(i);
                 if(e) e.remove();
             });
@@ -61,6 +61,7 @@ def bot_script():
                           '}' +
                           '@keyframes tlSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
                           '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.95; } 100% { right: 100%; opacity: 0.95; } }' +
+                          '@keyframes tlScanLeftToRight { 0% { left: 0%; opacity: 0.95; } 100% { left: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.95; } 100% { top: 100%; opacity: 0.95; } }';
             d.head.appendChild(s);
 
@@ -111,13 +112,12 @@ def bot_script():
                 .then(function(data){
                     var sig = String(data.signal || 'DOWN').toUpperCase();
                     var isCall = (sig === 'CALL' || sig === 'UP' || sig === 'BUY');
-                    var countdown = 5; // মোট ৫ সেকেন্ড
+                    var countdown = 5;
 
                     widget.style.background = isCall ? '#166534' : '#991b1b';
                     widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                     
-                    // দুইবার স্ক্যানিং সাইকেল শুরু (প্রতি চক্র ২.৫ সেকেন্ড করে)
-                    startDoubleCycleScanning();
+                    startLaserLaserScanningSequence();
 
                     var timerInterval = setInterval(function(){
                         countdown--;
@@ -140,55 +140,51 @@ def bot_script():
                 });
             };
 
-            function startDoubleCycleScanning() {
+            function startLaserLaserScanningSequence() {
                 removeScanningEffect();
                 
-                // --- সাইকেল ১ (প্রথম ২.৫ সেকেন্ড): ডান থেকে বামে সাদা, পরে উপর থেকে নিচে লাল (হালকা চিকন বিম) ---
-                
-                // ১.১: ডান থেকে বামে (সাদা)
+                // ১. প্রথম ১.২৫ সেকেন্ড: ডান থেকে বামে সাদা লেজার বিন (উভয় পাশে সাদা গ্লো ইফেক্ট)
                 var scanR1 = d.createElement('div');
                 scanR1.id = 'tradelens-laser-r';
-                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.7), #ffffff, rgba(255,255,255,0.7)); box-shadow: 0 0 15px #ffffff, 0 0 30px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 1.25s linear forwards;';
+                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.8), #ffffff, rgba(255,255,255,0.8)); box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff, 0 0 70px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 1.25s linear forwards;';
                 d.body.appendChild(scanR1);
 
-                // ১.২: ১.২৫ সেকেন্ড পর উপর থেকে নিচে (লাল)
+                // ২. ১.২৫ থেকে ২.৫ সেকেন্ড: উপর থেকে নিচে রেড লেজার বিন (উভয় পাশে রেড গ্লো ইফেক্ট)
                 setTimeout(function(){
                     var oldR1 = d.getElementById('tradelens-laser-r');
                     if(oldR1) oldR1.remove();
 
                     var scanT1 = d.createElement('div');
                     scanT1.id = 'tradelens-laser-t';
-                    scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(255,0,0,0.7), #ff0000, rgba(255,0,0,0.7)); box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.25s linear forwards;';
+                    scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(255,0,0,0.8), #ff0000, rgba(255,0,0,0.8)); box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 70px #ff0000; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.25s linear forwards;';
                     d.body.appendChild(scanT1);
                 }, 1250);
 
-                // --- সাইকেল ২ (পরবর্তী ২.৫ সেকেন্ড): ডান থেকে বামে সবুজ, পরে উপর থেকে নিচে হলুদ (হালকা চিকন বিম) ---
-
-                // ২.১: ২.৫ সেকেন্ড পর ডান থেকে বামে (সবুজ)
+                // ৩. ২.৫ থেকে ৩.৭৫ সেকেন্ড: বাম থেকে ডানে সবুজ (Green) লেজার বিন (উভয় পাশে সবুজ গ্লো ইফেক্ট)
                 setTimeout(function(){
                     var oldT1 = d.getElementById('tradelens-laser-t');
                     if(oldT1) oldT1.remove();
 
-                    var scanR2 = d.createElement('div');
-                    scanR2.id = 'tradelens-laser-r';
-                    scanR2.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(34,197,94,0.7), #22c55e, rgba(34,197,94,0.7)); box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 1.25s linear forwards;';
-                    d.body.appendChild(scanR2);
+                    var scanL2 = d.createElement('div');
+                    scanL2.id = 'tradelens-laser-l';
+                    scanL2.style.cssText = 'position:fixed; top:0; left:0; width:5px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.8), #22c55e, rgba(34,197,94,0.8)); box-shadow: 0 0 20px #22c55e, 0 0 40px #22c55e, 0 0 70px #22c55e; z-index:2147483646; pointer-events:none; animation:tlScanLeftToRight 1.25s linear forwards;';
+                    d.body.appendChild(scanL2);
                 }, 2500);
 
-                // ২.২: ৩.৭৫ সেকেন্ড পর উপর থেকে নিচে (হলুদ)
+                // ৪. ৩.৭৫ থেকে ৫.০ সেকেন্ড: উপর থেকে নিচে হলুদ (Yellow) লেজার বিন (উভয় পাশে হলুদ গ্লো ইফেক্ট)
                 setTimeout(function(){
-                    var oldR2 = d.getElementById('tradelens-laser-r');
-                    if(oldR2) oldR2.remove();
+                    var oldL2 = d.getElementById('tradelens-laser-l');
+                    if(oldL2) oldL2.remove();
 
                     var scanT2 = d.createElement('div');
                     scanT2.id = 'tradelens-laser-t';
-                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(234,179,8,0.7), #eab308, rgba(234,179,8,0.7)); box-shadow: 0 0 15px #eab308, 0 0 30px #eab308; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.25s linear forwards;';
+                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(234,179,8,0.8), #eab308, rgba(234,179,8,0.8)); box-shadow: 0 0 20px #eab308, 0 0 40px #eab308, 0 0 70px #eab308; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.25s linear forwards;';
                     d.body.appendChild(scanT2);
                 }, 3750);
             }
 
             function removeScanningEffect() {
-                ["tradelens-laser-r", "tradelens-laser-t"].forEach(function(i){
+                ["tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
                     var el = d.getElementById(i);
                     if(el) el.remove();
                 });
