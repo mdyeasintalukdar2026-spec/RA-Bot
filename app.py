@@ -159,7 +159,7 @@ def bot_script():
     (function(){
         try {
             var d = document;
-            ["tradelens-widget", "tradelens-style", "tradelens-laser-r1", "tradelens-laser-t1", "tradelens-laser-l2", "tradelens-laser-t2"].forEach(function(i){
+            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t1", "tradelens-laser-t2"].forEach(function(i){
                 var e = d.getElementById(i);
                 if(e) e.remove();
             });
@@ -174,7 +174,7 @@ def bot_script():
                           '50% { box-shadow: 0 0 22px #ffffff, 0 0 40px #00f0ff; border-color: #ffffff; }' +
                           '100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
                           '}' +
-                          '@keyframes tlFadeBlink { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }' +
+                          '@keyframes tlFadeBlink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }' +
                           '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.95; } 100% { right: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanLeftToRight { 0% { left: 0%; opacity: 0.95; } 100% { left: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.95; } 100% { top: 100%; opacity: 0.95; } }';
@@ -213,11 +213,10 @@ def bot_script():
 
             function detectUserTradingSeconds() {
                 try {
-                    // Quotex-এর ট্রেডিং প্যানেল থেকে সঠিক টাইম ইনপুট বা লেবেল খুঁজে বের করা
-                    var timeElements = d.querySelectorAll('input, div, span, button');
-                    for(var i = 0; i < timeElements.length; i++) {
-                        var text = (timeElements[i].innerText || timeElements[i].value || '').trim();
-                        // ফরম্যাট যেমন: 00:00:05 অথবা 00:05 etc.
+                    // Quotex প্ল্যাটফর্মের টাইমার ইনপুট বা বক্স থেকে নিখুঁত সময় বের করা
+                    var inputs = d.querySelectorAll('input, div, span');
+                    for(var i = 0; i < inputs.length; i++) {
+                        var text = (inputs[i].innerText || inputs[i].value || '').trim();
                         if(text.match(/^(\\d{2}:){2}\\d{2}$/)) {
                             var parts = text.split(':');
                             var totalSec = parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseInt(parts[2]);
@@ -225,21 +224,13 @@ def bot_script():
                         }
                     }
                     
-                    // ইনপুট ফিল্ড বা টাইমার বক্স চেক করা
-                    var activeTimeInput = d.querySelector('input[class*="time"], input[class*="timer"], div[class*="timer-value"], div[class*="dropdown"]');
-                    if(activeTimeInput) {
-                        var valText = (activeTimeInput.innerText || activeTimeInput.value || '').trim();
-                        var numMatch = valText.match(/(\\d+)\\s*(s|m|h)?/i);
-                        if(numMatch) {
-                            var val = parseInt(numMatch[1]);
-                            var unit = (numMatch[2] || 's').toLowerCase();
-                            if(unit === 'm') return val * 60;
-                            if(unit === 'h') return val * 3600;
-                            if(val > 0) return val;
-                        }
+                    var timeInput = d.querySelector('input[class*="time"], input[class*="timer"]');
+                    if(timeInput && timeInput.value) {
+                        var val = parseInt(timeInput.value);
+                        if(!isNaN(val) && val > 0) return val;
                     }
                 } catch(e) {}
-                return 5; // ডিফলल्ट ৫ সেকেন্ড
+                return 5; // ডিফল্ট ৫ সেকেন্ড যদি না পাওয়া যায়
             }
 
             var isRunning = false;
@@ -251,9 +242,9 @@ def bot_script():
 
                 widget.style.background = '#000000';
                 widget.style.borderColor = '#ffffff';
-                widget.innerHTML = '<div style="font-size:7.5px; font-weight:900; color:#ffffff; text-align:center; letter-spacing:0.3px; line-height:1.2; animation: tlFadeBlink 1s infinite ease-in-out;">SCANNING...</div>';
+                widget.innerHTML = '<div style="font-size:7.5px; font-weight:900; color:#ffffff; text-align:center; letter-spacing:0.3px; line-height:1.2; animation: tlFadeBlink 0.8s infinite ease-in-out;">SCANNING...</div>';
 
-                startSmoothLaserScanningSequence();
+                startSequentialScanningSequence();
 
                 fetch(renderServerUrl + '/signal?t=' + Date.now())
                 .then(function(r){ return r.json(); })
@@ -294,7 +285,7 @@ def bot_script():
                             }
                         }, 1000);
 
-                    }, 5000); // ঠিক ৫ সেকেন্ড স্ক্যানিংয়ের পর ট্রেড ও কাউন্টডাউন শুরু হবে
+                    }, 4000); // ঠিক ৪ সেকেন্ড স্ক্যানিংয়ের পর ট্রেড ও সঠিক কাউন্টডাউন শুরু হবে
                 });
             };
 
@@ -311,41 +302,51 @@ def bot_script():
                 return sec + 's';
             }
 
-            function startSmoothLaserScanningSequence() {
+            function startSequentialScanningSequence() {
                 removeScanningEffect();
                 
-                // প্রথম আড়াই সেকেন্ড (০ থেকে ২.৫ সেকেন্ড): হোয়াইট (ডান থেকে বামে) + রেড (উপর থেকে নিচে) একসাথে অত্যন্ত স্লো ও স্মুথ মোশনে
-                var scanR1 = d.createElement('div');
-                scanR1.id = 'tradelens-laser-r1';
-                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:4px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.2), #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
-                d.body.appendChild(scanR1);
+                // ধাপ ১: হোয়াইট কালার (ডান থেকে বামে) - ১ সেকেন্ড
+                var scanR = d.createElement('div');
+                scanR.id = 'tradelens-laser-r';
+                scanR.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.3), #ffffff, rgba(255,255,255,0.3)); box-shadow: 0 0 25px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
+                d.body.appendChild(scanR);
 
-                var scanT1 = d.createElement('div');
-                scanT1.id = 'tradelens-laser-t1';
-                scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:4px; background:linear-gradient(to bottom, rgba(255,0,0,0.2), #ff0000, rgba(255,0,0,0.2)); box-shadow: 0 0 20px #ff0000; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
-                d.body.appendChild(scanT1);
-
-                // পরবর্তী আড়াই সেকেন্ড (২.৫ থেকে ৫ সেকেন্ড): গ্রিন (বাম থেকে ডানে) + ইয়েলো (উপর থেকে নিচে) একসাথে স্মুথ মোশনে
+                // ধাপ ২: রেড কালার (উপর থেকে নিচে) - পরবর্তী ১ সেকেন্ড (মোট ১ থেকে ২ সেকেন্ড)
                 setTimeout(function(){
-                    var oldR1 = d.getElementById('tradelens-laser-r1');
-                    if(oldR1) oldR1.remove();
+                    var oldR = d.getElementById('tradelens-laser-r');
+                    if(oldR) oldR.remove();
+
+                    var scanT1 = d.createElement('div');
+                    scanT1.id = 'tradelens-laser-t1';
+                    scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(255,0,0,0.3), #ff0000, rgba(255,0,0,0.3)); box-shadow: 0 0 25px #ff0000; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
+                    d.body.appendChild(scanT1);
+                }, 1000);
+
+                // ধাপ ৩: গ্রিন কালার (বাম থেকে ডানে) - পরবর্তী ১ সেকেন্ড (মোট ২ থেকে ৩ সেকেন্ড)
+                setTimeout(function(){
                     var oldT1 = d.getElementById('tradelens-laser-t1');
                     if(oldT1) oldT1.remove();
 
-                    var scanL2 = d.createElement('div');
-                    scanL2.id = 'tradelens-laser-l2';
-                    scanL2.style.cssText = 'position:fixed; top:0; left:0; width:4px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.2), #22c55e, rgba(34,197,94,0.2)); box-shadow: 0 0 20px #22c55e; z-index:2147483646; pointer-events:none; will-change: left; animation:tlScanLeftToRight 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
-                    d.body.appendChild(scanL2);
+                    var scanL = d.createElement('div');
+                    scanL.id = 'tradelens-laser-l';
+                    scanL.style.cssText = 'position:fixed; top:0; left:0; width:5px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.3), #22c55e, rgba(34,197,94,0.3)); box-shadow: 0 0 25px #22c55e; z-index:2147483646; pointer-events:none; will-change: left; animation:tlScanLeftToRight 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
+                    d.body.appendChild(scanL);
+                }, 2000);
+
+                // ধাপ ৪: ইয়েলো কালার (উপর থেকে নিচে) - শেষ ১ সেকেন্ড (মোট ৩ থেকে ৪ সেকেন্ড)
+                setTimeout(function(){
+                    var oldL = d.getElementById('tradelens-laser-l');
+                    if(oldL) oldL.remove();
 
                     var scanT2 = d.createElement('div');
                     scanT2.id = 'tradelens-laser-t2';
-                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:4px; background:linear-gradient(to bottom, rgba(234,179,8,0.2), #eab308, rgba(234,179,8,0.2)); box-shadow: 0 0 20px #eab308; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
+                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(234,179,8,0.3), #eab308, rgba(234,179,8,0.3)); box-shadow: 0 0 25px #eab308; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
                     d.body.appendChild(scanT2);
-                }, 2500);
+                }, 3000);
             }
 
             function removeScanningEffect() {
-                ["tradelens-laser-r1", "tradelens-laser-t1", "tradelens-laser-l2", "tradelens-laser-t2"].forEach(function(i){
+                ["tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t1", "tradelens-laser-t2"].forEach(function(i){
                     var el = d.getElementById(i);
                     if(el) el.remove();
                 });
