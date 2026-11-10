@@ -247,12 +247,10 @@ def bot_script():
                 if(isRunning) return;
                 isRunning = true;
 
-                # ইনস্ট্যান্ট ক্লিক করার সাথে সাথেই কোনো ডিলে ছাড়া ব্ল্যাক ব্যাকগ্রাউন্ড ও স্ক্যানিং লেখা শুরু
                 widget.style.background = '#000000';
                 widget.style.borderColor = '#ffffff';
                 widget.innerHTML = '<div style="font-size:7.5px; font-weight:900; color:#ffffff; text-align:center; letter-spacing:0.3px; line-height:1.2; animation: tlFadeBlink 1s infinite ease-in-out;">SCANNING...</div>';
 
-                # সুমুথ লেজার স্ক্যানিং অ্যানিমেশন ইনস্ট্যান্ট ট্রিগার
                 startSmoothLaserScanningSequence();
 
                 fetch(renderServerUrl + '/signal?t=' + Date.now())
@@ -262,7 +260,6 @@ def bot_script():
                     var sig = String(data.signal || 'CALL').toUpperCase();
                     var isCall = (sig === 'CALL' || sig === 'UP' || sig === 'BUY');
                     
-                    # ৫ সেকেন্ড স্ক্যানিং শেষ হওয়ার পর ট্রেড এক্সিকিউট ও ইউজার সেট করা টাইমফ্রেম অনুযায়ী কাউন্টডাউন শুরু
                     setTimeout(function(){
                         removeScanningEffect();
                         triggerQuotexTrade(isCall);
@@ -270,7 +267,6 @@ def bot_script():
                         var targetSeconds = detectUserTradingSeconds();
                         var countdown = targetSeconds;
 
-                        # UP হলে সবুজ ব্যাকগ্রাউন্ড ও উপরে UP; DOWN হলে লাল ব্যাকগ্রাউন্ড ও উপরে DOWN
                         widget.style.background = isCall ? '#166534' : '#991b1b';
                         widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                         
@@ -311,13 +307,11 @@ def bot_script():
             function startSmoothLaserScanningSequence() {
                 removeScanningEffect();
                 
-                # ১. ডান থেকে বামে সাদা (১.২৫ সেকেন্ড - সুপার স্মুথ)
                 var scanR1 = d.createElement('div');
                 scanR1.id = 'tradelens-laser-r';
                 scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.9), #ffffff, rgba(255,255,255,0.9)); box-shadow: 0 0 25px #ffffff, 0 0 50px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
                 d.body.appendChild(scanR1);
 
-                # ২. উপর থেকে নিচে রেড (১.২৫ থেকে ২.৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldR1 = d.getElementById('tradelens-laser-r');
                     if(oldR1) oldR1.remove();
@@ -328,7 +322,6 @@ def bot_script():
                     d.body.appendChild(scanT1);
                 }, 1250);
 
-                # ৩. বাম থেকে ডানে সবুজ (২.৫ থেকে ৩.৭৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldT1 = d.getElementById('tradelens-laser-t');
                     if(oldT1) oldT1.remove();
@@ -339,7 +332,6 @@ def bot_script():
                     d.body.appendChild(scanL2);
                 }, 2500);
 
-                # ৪. উপর থেকে নিচে হলুদ (৩.৭৫ থেকে ৫.০ সেকেন্ড)
                 setTimeout(function(){
                     var oldL2 = d.getElementById('tradelens-laser-l');
                     if(oldL2) oldL2.remove();
