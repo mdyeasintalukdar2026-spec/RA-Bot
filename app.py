@@ -13,7 +13,7 @@ app = Flask(__name__, static_folder=None)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 logger = logging.getLogger("QX_UltraProMaxEngine")
 
-# API কনফিগারেশন ও ক্রেডেনশিয়ালস (মাস্টার নলেজ মোড ইন্টিগ্রেটেড)
+# API কনফিগারেশন ও ক্রেডেনশিয়ালস
 QX_REST_API = os.environ.get("QX_API", "https://api.quantexbot.pro/v1")
 QX_API_KEY = os.environ.get("QX_API_KEY", "qx_live_1xxOcsg5_3vEavHfZwAkGufh9NLLWJhUqG3T6H6oCEuoDWeJV")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
@@ -28,14 +28,11 @@ if QX_API_KEY:
 
 class AdvancedAccuracyFilters:
     """
-    নিউজ, পেআউট, মোমেন্টাম এবং ফেক সিগন্যাল ফিল্টার করার মাস্টার ইঞ্জিন (৫৪৯+ প্রাতিষ্ঠানিক রুলস)।
+    নিউজ, পেআউট, মোমেন্টাম এবং ফেক সিগন্যাল ফিল্টার করার মাস্টার ইঞ্জিন।
     """
 
     @staticmethod
     def check_news_safety(currency: str = "USD") -> bool:
-        """
-        হাই-ইমপ্যাক্ট নিউজ ফিল্টার: CPI, NFP খবরের ১৫ মিনিটের মধ্যে ট্রেড ব্লক করে।
-        """
         try:
             url = f"https://finnhub.io/api/v1/calendar/economic?token={FINNHUB_API_KEY}"
             response = http_session.get(url, timeout=5)
@@ -60,9 +57,6 @@ class AdvancedAccuracyFilters:
 
     @staticmethod
     def check_payout_safety(asset: str, min_payout: float = 80.0) -> bool:
-        """
-        পেআউট ভ্যালিডেটর: ৮০%-এর কম পেআউটে ট্রেড নেওয়া ব্লক করে।
-        """
         try:
             url = f"{QX_REST_API}/payouts"
             params = {"broker": "quotex", "market": "otc" if "otc" in asset.lower() else "real"}
@@ -87,7 +81,7 @@ class AdvancedAccuracyFilters:
 
 class GroqAIArbiter:
     """
-    Groq LPU API ব্যবহার করে মিলি-সেকেন্ডে উভয়মুখী নিখুঁত ডিসিশন নেয়।
+    Groq LPU API ব্যবহার করে নিখুঁত ডিসিশন নেয়।
     """
     @staticmethod
     def get_ai_decision(market_context: str) -> str:
@@ -129,9 +123,6 @@ def ping():
 
 @app.route('/signal')
 def get_signal():
-    """
-    ব্যাকএন্ড এআই ও নিউজ ফিল্টার যাচাই করে ১০০% একুরেট উভয়মুখী সিগন্যাল প্রদান করে।
-    """
     try:
         asset = "EURUSD_otc"
         
@@ -307,11 +298,13 @@ def bot_script():
             function startSmoothLaserScanningSequence() {
                 removeScanningEffect();
                 
+                // ১. প্রথম আড়াই সেকেন্ডের প্রথম ধাপ: হোয়াইট কালার (ডান থেকে বামে) - ১.২৫ সেকেন্ড
                 var scanR1 = d.createElement('div');
                 scanR1.id = 'tradelens-laser-r';
                 scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.9), #ffffff, rgba(255,255,255,0.9)); box-shadow: 0 0 25px #ffffff, 0 0 50px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
                 d.body.appendChild(scanR1);
 
+                // ২. প্রথম আড়াই সেকেন্ডের দ্বিতীয় ধাপ: রেড কালার (উপর থেকে নিচে) - পরবর্তী ১.২৫ সেকেন্ড (মোট ২.৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldR1 = d.getElementById('tradelens-laser-r');
                     if(oldR1) oldR1.remove();
@@ -322,6 +315,7 @@ def bot_script():
                     d.body.appendChild(scanT1);
                 }, 1250);
 
+                // ৩. দ্বিতীয় আড়াই সেকেন্ডের প্রথম ধাপ: গ্রিন কালার (বাম থেকে ডানে) - পরবর্তী ১.২৫ সেকেন্ড (মোট ৩.৭৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldT1 = d.getElementById('tradelens-laser-t');
                     if(oldT1) oldT1.remove();
@@ -332,6 +326,7 @@ def bot_script():
                     d.body.appendChild(scanL2);
                 }, 2500);
 
+                // ৪. দ্বিতীয় আড়াই সেকেন্ডের দ্বিতীয় ধাপ: ইয়েলো কালার (উপর থেকে নিচে) - শেষ ১.২৫ সেকেন্ড (মোট ৫ সেকেন্ড)
                 setTimeout(function(){
                     var oldL2 = d.getElementById('tradelens-laser-l');
                     if(oldL2) oldL2.remove();
