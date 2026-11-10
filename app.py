@@ -28,7 +28,7 @@ if QX_API_KEY:
 
 class AdvancedAccuracyFilters:
     """
-    নিউজ, পেআউট, মোমেন্টাম এবং ফেক সিগন্যাল ফিল্টার করার মাস্টার ইঞ্জিন।
+    নিউজ, পেআউট এবং ফেক সিগন্যাল ফিল্টার করার মাস্টার ইঞ্জিন।
     """
 
     @staticmethod
@@ -159,7 +159,7 @@ def bot_script():
     (function(){
         try {
             var d = document;
-            ["tradelens-widget", "tradelens-style", "tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
+            ["tradelens-widget", "tradelens-style", "tradelens-laser-r1", "tradelens-laser-t1", "tradelens-laser-l2", "tradelens-laser-t2"].forEach(function(i){
                 var e = d.getElementById(i);
                 if(e) e.remove();
             });
@@ -182,7 +182,7 @@ def bot_script():
 
             var widget = d.createElement('div');
             widget.id = 'tradelens-widget';
-            widget.style.cssText = 'position:fixed; top:130px; right:35px; width:62px; height:62px; background:#080c16; border:2.5px solid #00f0ff; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:2147483647; cursor:grab; animation:tlPulseGlow 3s infinite ease-in-out; overflow:hidden; box-sizing:border-box;';
+            widget.style.cssText = 'position:fixed; top:130px; right:35px; width:62px; height:62px; background:#080c16; border:2.5px solid #00f0ff; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:2147483647; cursor:grab; animation:tlPulseGlow 3s infinite ease-in-out; overflow:hidden; box-sizing:border-box;';
             
             widget.innerHTML = '<img src="' + botProfileImg + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%; pointer-events:none;" />';
 
@@ -213,22 +213,33 @@ def bot_script():
 
             function detectUserTradingSeconds() {
                 try {
-                    var inputs = d.querySelectorAll('input, div, span');
-                    for(var i = 0; i < inputs.length; i++) {
-                        var text = (inputs[i].innerText || inputs[i].value || '').trim();
-                        if(text.match(/^\\d{2}:\\d{2}:\\d{2}$/)) {
+                    // Quotex-এর ট্রেডিং প্যানেল থেকে সঠিক টাইম ইনপুট বা লেবেল খুঁজে বের করা
+                    var timeElements = d.querySelectorAll('input, div, span, button');
+                    for(var i = 0; i < timeElements.length; i++) {
+                        var text = (timeElements[i].innerText || timeElements[i].value || '').trim();
+                        // ফরম্যাট যেমন: 00:00:05 অথবা 00:05 etc.
+                        if(text.match(/^(\\d{2}:){2}\\d{2}$/)) {
                             var parts = text.split(':');
                             var totalSec = parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseInt(parts[2]);
-                            if(totalSec > 0 && totalSec <= 3600) return totalSec;
+                            if(totalSec > 0 && totalSec <= 86400) return totalSec;
                         }
                     }
-                    var timeInput = d.querySelector('input[class*="time"], input[class*="timer"]');
-                    if(timeInput && timeInput.value) {
-                        var val = parseInt(timeInput.value);
-                        if(!isNaN(val) && val > 0) return val;
+                    
+                    // ইনপুট ফিল্ড বা টাইমার বক্স চেক করা
+                    var activeTimeInput = d.querySelector('input[class*="time"], input[class*="timer"], div[class*="timer-value"], div[class*="dropdown"]');
+                    if(activeTimeInput) {
+                        var valText = (activeTimeInput.innerText || activeTimeInput.value || '').trim();
+                        var numMatch = valText.match(/(\\d+)\\s*(s|m|h)?/i);
+                        if(numMatch) {
+                            var val = parseInt(numMatch[1]);
+                            var unit = (numMatch[2] || 's').toLowerCase();
+                            if(unit === 'm') return val * 60;
+                            if(unit === 'h') return val * 3600;
+                            if(val > 0) return val;
+                        }
                     }
                 } catch(e) {}
-                return 5;
+                return 5; // ডিফলल्ट ৫ সেকেন্ড
             }
 
             var isRunning = false;
@@ -261,14 +272,15 @@ def bot_script():
                         widget.style.background = isCall ? '#166534' : '#991b1b';
                         widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                         
-                        widget.innerHTML = '<div style="font-size:9.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + (isCall ? 'UP' : 'DOWN') + '</div>' +
-                                           '<div style="font-size:10px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + formatTimeDisplay(countdown) + '</div>';
+                        var labelText = isCall ? 'UP' : 'DOWN';
+                        widget.innerHTML = '<div style="font-size:9.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + labelText + '</div>' +
+                                           '<div style="font-size:9.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + formatTimeDisplay(countdown) + '</div>';
 
                         var timerInterval = setInterval(function(){
                             countdown--;
                             if(countdown >= 0) {
-                                widget.innerHTML = '<div style="font-size:9.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + (isCall ? 'UP' : 'DOWN') + '</div>' +
-                                                   '<div style="font-size:10px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + formatTimeDisplay(countdown) + '</div>';
+                                widget.innerHTML = '<div style="font-size:9.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + labelText + '</div>' +
+                                                   '<div style="font-size:9.5px; font-weight:900; color:#fff; text-align:center; line-height:1.1;">' + formatTimeDisplay(countdown) + '</div>';
                             }
 
                             if(countdown <= 0) {
@@ -282,12 +294,16 @@ def bot_script():
                             }
                         }, 1000);
 
-                    }, 5000);
+                    }, 5000); // ঠিক ৫ সেকেন্ড স্ক্যানিংয়ের পর ট্রেড ও কাউন্টডাউন শুরু হবে
                 });
             };
 
             function formatTimeDisplay(sec) {
-                if(sec >= 60) {
+                if(sec >= 3600) {
+                    var h = Math.floor(sec / 3600);
+                    var m = Math.floor((sec % 3600) / 60);
+                    return h + 'h ' + (m > 0 ? m + 'm' : '');
+                } else if(sec >= 60) {
                     var m = Math.floor(sec / 60);
                     var s = sec % 60;
                     return m + 'm ' + (s > 0 ? s + 's' : '');
@@ -298,48 +314,38 @@ def bot_script():
             function startSmoothLaserScanningSequence() {
                 removeScanningEffect();
                 
-                // ১. প্রথম আড়াই সেকেন্ডের প্রথম ধাপ: হোয়াইট কালার (ডান থেকে বামে) - ১.২৫ সেকেন্ড
+                // প্রথম আড়াই সেকেন্ড (০ থেকে ২.৫ সেকেন্ড): হোয়াইট (ডান থেকে বামে) + রেড (উপর থেকে নিচে) একসাথে অত্যন্ত স্লো ও স্মুথ মোশনে
                 var scanR1 = d.createElement('div');
-                scanR1.id = 'tradelens-laser-r';
-                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.9), #ffffff, rgba(255,255,255,0.9)); box-shadow: 0 0 25px #ffffff, 0 0 50px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
+                scanR1.id = 'tradelens-laser-r1';
+                scanR1.style.cssText = 'position:fixed; top:0; right:0; width:4px; height:100vh; background:linear-gradient(to left, rgba(255,255,255,0.2), #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 20px #ffffff; z-index:2147483646; pointer-events:none; will-change: right; animation:tlScanRightToLeft 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
                 d.body.appendChild(scanR1);
 
-                // ২. প্রথম আড়াই সেকেন্ডের দ্বিতীয় ধাপ: রেড কালার (উপর থেকে নিচে) - পরবর্তী ১.২৫ সেকেন্ড (মোট ২.৫ সেকেন্ড)
+                var scanT1 = d.createElement('div');
+                scanT1.id = 'tradelens-laser-t1';
+                scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:4px; background:linear-gradient(to bottom, rgba(255,0,0,0.2), #ff0000, rgba(255,0,0,0.2)); box-shadow: 0 0 20px #ff0000; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
+                d.body.appendChild(scanT1);
+
+                // পরবর্তী আড়াই সেকেন্ড (২.৫ থেকে ৫ সেকেন্ড): গ্রিন (বাম থেকে ডানে) + ইয়েলো (উপর থেকে নিচে) একসাথে স্মুথ মোশনে
                 setTimeout(function(){
-                    var oldR1 = d.getElementById('tradelens-laser-r');
+                    var oldR1 = d.getElementById('tradelens-laser-r1');
                     if(oldR1) oldR1.remove();
-
-                    var scanT1 = d.createElement('div');
-                    scanT1.id = 'tradelens-laser-t';
-                    scanT1.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(255,0,0,0.9), #ff0000, rgba(255,0,0,0.9)); box-shadow: 0 0 25px #ff0000, 0 0 50px #ff0000; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
-                    d.body.appendChild(scanT1);
-                }, 1250);
-
-                // ৩. দ্বিতীয় আড়াই সেকেন্ডের প্রথম ধাপ: গ্রিন কালার (বাম থেকে ডানে) - পরবর্তী ১.২৫ সেকেন্ড (মোট ৩.৭৫ সেকেন্ড)
-                setTimeout(function(){
-                    var oldT1 = d.getElementById('tradelens-laser-t');
+                    var oldT1 = d.getElementById('tradelens-laser-t1');
                     if(oldT1) oldT1.remove();
 
                     var scanL2 = d.createElement('div');
-                    scanL2.id = 'tradelens-laser-l';
-                    scanL2.style.cssText = 'position:fixed; top:0; left:0; width:5px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.9), #22c55e, rgba(34,197,94,0.9)); box-shadow: 0 0 25px #22c55e, 0 0 50px #22c55e; z-index:2147483646; pointer-events:none; will-change: left; animation:tlScanLeftToRight 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
+                    scanL2.id = 'tradelens-laser-l2';
+                    scanL2.style.cssText = 'position:fixed; top:0; left:0; width:4px; height:100vh; background:linear-gradient(to right, rgba(34,197,94,0.2), #22c55e, rgba(34,197,94,0.2)); box-shadow: 0 0 20px #22c55e; z-index:2147483646; pointer-events:none; will-change: left; animation:tlScanLeftToRight 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
                     d.body.appendChild(scanL2);
-                }, 2500);
-
-                // ৪. দ্বিতীয় আড়াই সেকেন্ডের দ্বিতীয় ধাপ: ইয়েলো কালার (উপর থেকে নিচে) - শেষ ১.২৫ সেকেন্ড (মোট ৫ সেকেন্ড)
-                setTimeout(function(){
-                    var oldL2 = d.getElementById('tradelens-laser-l');
-                    if(oldL2) oldL2.remove();
 
                     var scanT2 = d.createElement('div');
-                    scanT2.id = 'tradelens-laser-t';
-                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, rgba(234,179,8,0.9), #eab308, rgba(234,179,8,0.9)); box-shadow: 0 0 25px #eab308, 0 0 50px #eab308; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;';
+                    scanT2.id = 'tradelens-laser-t2';
+                    scanT2.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:4px; background:linear-gradient(to bottom, rgba(234,179,8,0.2), #eab308, rgba(234,179,8,0.2)); box-shadow: 0 0 20px #eab308; z-index:2147483646; pointer-events:none; will-change: top; animation:tlScanTopToBottom 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;';
                     d.body.appendChild(scanT2);
-                }, 3750);
+                }, 2500);
             }
 
             function removeScanningEffect() {
-                ["tradelens-laser-r", "tradelens-laser-l", "tradelens-laser-t"].forEach(function(i){
+                ["tradelens-laser-r1", "tradelens-laser-t1", "tradelens-laser-l2", "tradelens-laser-t2"].forEach(function(i){
                     var el = d.getElementById(i);
                     if(el) el.remove();
                 });
