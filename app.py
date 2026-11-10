@@ -60,8 +60,8 @@ def bot_script():
                           '100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
                           '}' +
                           '@keyframes tlSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' +
-                          '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.9; } 100% { right: 100%; opacity: 0.9; } }' +
-                          '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.9; } 100% { top: 100%; opacity: 0.9; } }';
+                          '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.95; } 100% { right: 100%; opacity: 0.95; } }' +
+                          '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.95; } 100% { top: 100%; opacity: 0.95; } }';
             d.head.appendChild(s);
 
             var widget = d.createElement('div');
@@ -111,12 +111,12 @@ def bot_script():
                 .then(function(data){
                     var sig = String(data.signal || 'DOWN').toUpperCase();
                     var isCall = (sig === 'CALL' || sig === 'UP' || sig === 'BUY');
-                    var countdown = 10;
+                    var countdown = 5; // ৫ সেকেন্ড কাউন্টডাউন
 
                     widget.style.background = isCall ? '#166534' : '#991b1b';
                     widget.style.borderColor = isCall ? '#22c55e' : '#ef4444';
                     
-                    // সিকোয়েন্সিয়াল স্ক্যানিং শুরু (প্রথমে ডান থেকে বামে সাদা, পরে উপর থেকে নিচে রেড)
+                    // সিকোয়েন্সিয়াল স্ক্যানিং শুরু (প্রথমে ডান থেকে বামে মোটা সাদা, পরে উপর থেকে নিচে মোটা রেড)
                     startSequentialScanning();
 
                     var timerInterval = setInterval(function(){
@@ -134,7 +134,7 @@ def bot_script():
                                 widget.style.borderColor = '#00f0ff';
                                 widget.innerHTML = '<img src="' + botProfileImg + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%; pointer-events:none;" />';
                                 isRunning = false;
-                            }, 3500);
+                            }, 2500);
                         }
                     }, 1000);
                 });
@@ -143,22 +143,22 @@ def bot_script():
             function startSequentialScanning() {
                 removeScanningEffect();
                 
-                // ১. প্রথমে ডান সাইড থেকে বামে স্ক্যানিং (সাদা রং, স্লো মোশন - ২.২ সেকেন্ড)
+                // ১. প্রথমে ডান সাইড থেকে বামে স্ক্যানিং (সাদা রং, একটু মোটা ও হাই গ্লো ইফেক্ট - ১.১ সেকেন্ড)
                 var scanR = d.createElement('div');
                 scanR.id = 'tradelens-laser-r';
-                scanR.style.cssText = 'position:fixed; top:0; right:0; width:5px; height:100vh; background:linear-gradient(to left, #ffffff, rgba(255,255,255,0.2)); box-shadow: 0 0 15px #ffffff, 0 0 30px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 2.2s linear forwards;';
+                scanR.style.cssText = 'position:fixed; top:0; right:0; width:12px; height:100vh; background:linear-gradient(to left, #ffffff, rgba(255,255,255,0.4)); box-shadow: 0 0 25px #ffffff, 0 0 50px #ffffff, 0 0 80px #ffffff; z-index:2147483646; pointer-events:none; animation:tlScanRightToLeft 1.1s linear forwards;';
                 d.body.appendChild(scanR);
 
-                // ২. ডান দিকের স্ক্যান শেষ হওয়ার পর (২.২ সেকেন্ড পর) উপর থেকে নিচে রেড স্ক্যানিং শুরু হবে
+                // ২. ডান দিকের স্ক্যান শেষ হওয়ার পর উপর থেকে নিচে রেড স্ক্যানিং শুরু হবে (একটু মোটা ও হাই রেড গ্লো ইফেক্ট)
                 setTimeout(function(){
                     var oldR = d.getElementById('tradelens-laser-r');
                     if(oldR) oldR.remove();
 
                     var scanT = d.createElement('div');
                     scanT.id = 'tradelens-laser-t';
-                    scanT.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:5px; background:linear-gradient(to bottom, #ff0000, rgba(255,0,0,0.2)); box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 2.2s linear forwards;';
+                    scanT.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:12px; background:linear-gradient(to bottom, #ff0000, rgba(255,0,0,0.4)); box-shadow: 0 0 25px #ff0000, 0 0 50px #ff0000, 0 0 80px #ff0000; z-index:2147483646; pointer-events:none; animation:tlScanTopToBottom 1.1s linear forwards;';
                     d.body.appendChild(scanT);
-                }, 2200);
+                }, 1100);
             }
 
             function removeScanningEffect() {
