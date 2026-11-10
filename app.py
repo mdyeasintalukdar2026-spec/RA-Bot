@@ -179,7 +179,8 @@ def bot_script():
                 if(e) e.remove();
             });
 
-            var botProfileImg = "https://i.postimg.cc/zDhXfPCW/IMG-20261104-WA0023.jpg";
+            var botProfileImg = "https://i.postimg.cc/yNVqPD94/IMG-20261110-225927.jpg";
+            var tgSectionImg = "https://i.postimg.cc/zDhXfPCW/IMG-20261104-WA0023.jpg";
             var telegramChannelUrl = "https://t.me/+x1QYA_1-sSs0NTk1";
             var correctPassword = "RATRCM";
             var renderServerUrl = "https://ra-bot-9cq8.onrender.com";
@@ -206,11 +207,11 @@ def bot_script():
                 '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">' +
                     '<div style="display:flex; align-items:center; gap:10px;">' +
                         '<img src="' + botProfileImg + '" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1.5px solid #22c55e;" />' +
-                        '<span style="color:#fff; font-weight:900; font-size:14px; letter-spacing:0.5px;">R-A TRADING COMMUNITY</span>' +
+                        '<span style="color:#fff; font-weight:900; font-size:14px; letter-spacing:0.5px;">R-A COMMUNITY BOT</span>' +
                     '</div>' +
                 '</div>' +
                 '<div id="tg-link-box" style="background:#111827; border:1px solid #374151; border-radius:10px; padding:10px; margin-bottom:15px; display:flex; align-items:center; gap:10px; cursor:pointer; transition:all 0.3s;">' +
-                    '<img src="' + botProfileImg + '" style="width:32px; height:32px; border-radius:50%; object-fit:cover;" />' +
+                    '<img src="' + tgSectionImg + '" style="width:32px; height:32px; border-radius:50%; object-fit:cover;" />' +
                     '<div style="text-align:left;">' +
                         '<div style="color:#22c55e; font-weight:bold; font-size:12px;">R-A Trading Community</div>' +
                         '<div style="color:#9ca3af; font-size:9px;">Click to Join Telegram</div>' +
