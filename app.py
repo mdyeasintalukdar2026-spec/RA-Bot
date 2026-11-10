@@ -192,34 +192,41 @@ def bot_script():
                           '50% { box-shadow: 0 0 22px #ffffff, 0 0 40px #00f0ff; border-color: #ffffff; }' +
                           '100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #00f0ff; border-color: #00f0ff; }' +
                           '}' +
+                          '@keyframes tlModalBorderGlow {' +
+                          '0% { border-color: #00f0ff; box-shadow: 0 0 15px #00f0ff; }' +
+                          '25% { border-color: #22c55e; box-shadow: 0 0 15px #22c55e; }' +
+                          '50% { border-color: #eab308; box-shadow: 0 0 15px #eab308; }' +
+                          '75% { border-color: #a855f7; box-shadow: 0 0 15px #a855f7; }' +
+                          '100% { border-color: #00f0ff; box-shadow: 0 0 15px #00f0ff; }' +
+                          '}' +
                           '@keyframes tlFadeBlink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }' +
                           '@keyframes tlScanRightToLeft { 0% { right: 0%; opacity: 0.95; } 100% { right: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanLeftToRight { 0% { left: 0%; opacity: 0.95; } 100% { left: 100%; opacity: 0.95; } }' +
                           '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.95; } 100% { top: 100%; opacity: 0.95; } }';
             d.head.appendChild(s);
 
-            // --- পাসওয়ার্ড অথেন্টিকেশন মডাল তৈরি ---
+            // --- পাসওয়ার্ড অথেন্টিকেশন মডাল তৈরি (ছোট সাইজ ও বর্ডার কালার অ্যানিমেশন সহ) ---
             var modal = d.createElement('div');
             modal.id = 'tradelens-auth-modal';
             modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:2147483647; display:flex; align-items:center; justify-content:center; font-family:sans-serif; box-sizing:border-box;';
             
-            modal.innerHTML = '<div style="background:linear-gradient(135deg, #0d1322, #080c16); border:2px solid #22c55e; border-radius:16px; width:340px; padding:24px; box-shadow: 0 0 30px rgba(34,197,94,0.3); text-align:center; position:relative;">' +
-                '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">' +
-                    '<div style="display:flex; align-items:center; gap:10px;">' +
-                        '<img src="' + botProfileImg + '" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1.5px solid #22c55e;" />' +
-                        '<span style="color:#fff; font-weight:900; font-size:14px; letter-spacing:0.5px;">R-A COMMUNITY BOT</span>' +
+            modal.innerHTML = '<div style="background:linear-gradient(135deg, #0d1322, #080c16); border:2.5px solid #00f0ff; border-radius:14px; width:290px; padding:18px; box-shadow: 0 0 25px rgba(0,240,255,0.3); text-align:center; position:relative; animation: tlModalBorderGlow 4s infinite linear;">' +
+                '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">' +
+                    '<div style="display:flex; align-items:center; gap:8px;">' +
+                        '<img src="' + botProfileImg + '" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1.5px solid #22c55e;" />' +
+                        '<span style="color:#fff; font-weight:900; font-size:12.5px; letter-spacing:0.5px;">R-A COMMUNITY BOT</span>' +
                     '</div>' +
                 '</div>' +
-                '<div id="tg-link-box" style="background:#111827; border:1px solid #374151; border-radius:10px; padding:10px; margin-bottom:15px; display:flex; align-items:center; gap:10px; cursor:pointer; transition:all 0.3s;">' +
-                    '<img src="' + tgSectionImg + '" style="width:32px; height:32px; border-radius:50%; object-fit:cover;" />' +
+                '<div id="tg-link-box" style="background:#111827; border:1px solid #374151; border-radius:8px; padding:8px 10px; margin-bottom:12px; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all 0.3s;">' +
+                    '<img src="' + tgSectionImg + '" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />' +
                     '<div style="text-align:left;">' +
-                        '<div style="color:#22c55e; font-weight:bold; font-size:12px;">R-A Trading Community</div>' +
-                        '<div style="color:#9ca3af; font-size:9px;">Click to Join Telegram</div>' +
+                        '<div style="color:#22c55e; font-weight:bold; font-size:11px;">R-A Trading Community</div>' +
+                        '<div style="color:#9ca3af; font-size:8.5px;">Click to Join Telegram</div>' +
                     '</div>' +
                 '</div>' +
-                '<div style="color:#9ca3af; font-size:10px; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">Bot Access Key</div>' +
-                '<input id="tl-pass-input" type="password" placeholder="Enter Password" style="width:100%; background:#1f2937; border:1px solid #4b5563; border-radius:8px; padding:12px; color:#fff; font-size:14px; text-align:center; outline:none; box-sizing:border-box; margin-bottom:15px;" />' +
-                '<button id="tl-verify-btn" style="width:100%; background:linear-gradient(90deg, #16a34a, #22c55e); border:none; border-radius:8px; padding:12px; color:#fff; font-weight:bold; font-size:13px; cursor:pointer; text-transform:uppercase; letter-spacing:1px;">ACTIVATE BOT</button>' +
+                '<div style="color:#9ca3af; font-size:9.5px; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Bot Access Key</div>' +
+                '<input id="tl-pass-input" type="password" placeholder="Enter Password" style="width:100%; background:#1f2937; border:1px solid #4b5563; border-radius:7px; padding:10px; color:#fff; font-size:13px; text-align:center; outline:none; box-sizing:border-box; margin-bottom:12px;" />' +
+                '<button id="tl-verify-btn" style="width:100%; background:linear-gradient(90deg, #16a34a, #22c55e); border:none; border-radius:7px; padding:10px; color:#fff; font-weight:bold; font-size:12px; cursor:pointer; text-transform:uppercase; letter-spacing:1px;">ACTIVATE BOT</button>' +
             '</div>';
 
             d.body.appendChild(modal);
