@@ -4,4 +4,4 @@ websocket-client
 gunicorn
 numpy
 pandas
-pyquotex
+git+https://github.com/cleitonleonel/pyquotex.git
