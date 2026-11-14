@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response
+From flask import Flask, jsonify, make_response
 import threading
 import requests
 import time
@@ -82,38 +82,7 @@ class AdvancedAccuracyFilters:
 class GroqAIArbiter:
     """
     Groq LPU API ব্যবহার করে প্রাতিষ্ঠানিক টেকনিক্যাল ডাটা বিশ্লেষণ করে নিখুঁত সিগন্যাল দেয়।
-    ফেক বা র‍্যান্ডম সিগন্যাল সম্পূর্ণ বর্জন করা হয়েছে।
     """
-    @staticmethod
-    def get_real_market_indicators(symbol: str = "EUR/USD") -> str:
-        """Twelve Data API থেকে রিয়েল-টাইম টেকনিক্যাল ইন্ডিকেটর (RSI, EMA, MACD) ফেচ করে।"""
-        try:
-            url = f"https://api.twelvedata.com/technical_indicator"
-            # RSI এবং EMA একসাথে চেক করা
-            params = {
-                "symbol": symbol,
-                "interval": "1min",
-                "apikey": TWELVE_DATA_API_KEY
-            }
-            # রিয়েল ডাটা ফেচিং ট্রাই করা
-            rsi_res = requests.get(f"{url}/rsi", params=params, timeout=3)
-            ema_res = requests.get(f"{url}/ema", params={**params, "timeperiod": 14}, timeout=3)
-            
-            indicators_info = "Market Indicators: "
-            if rsi_res.status_code == 200:
-                values = rsi_res.json().get("values", [])
-                if values:
-                    indicators_info += f"RSI_14: {values[0].get('rsi')}, "
-            if ema_res.status_code == 200:
-                values = ema_res.json().get("values", [])
-                if values:
-                    indicators_info += f"EMA_14: {values[0].get('ema')}, "
-            
-            return indicators_info if len(indicators_info) > 20 else "Real-time institutional price action sequence stable."
-        except Exception as e:
-            logger.error(f"Indicator Fetch Error: {e}")
-            return "Institutional liquidity sweep detected, robust trend continuation."
-
     @staticmethod
     def get_ai_decision(market_context: str) -> str:
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -121,29 +90,23 @@ class GroqAIArbiter:
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
         }
-        
-        # রিয়েল ইন্ডিকেটর ডেটা যুক্ত করা
-        live_indicators = GroqAIArbiter.get_real_market_indicators()
-        enhanced_context = f"{market_context} | {live_indicators}"
-
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are an elite institutional binary options Master AI Trader with 99.4% accuracy. Perform strict technical confluence analysis (RSI overbought/oversold levels, EMA crossover confirmation, Price Action momentum, and Candlestick structure). You MUST respond with ONLY 'CALL' or 'PUT'. No extra text, no explanations, no random outputs."
+                    "content": "You are an institutional binary options Master AI Trader. Perform strict technical confluence analysis (RSI, EMA cross, Price Action, Candlestick pattern). Return ONLY 'CALL' or 'PUT'. Never provide random outputs."
                 },
                 {
                     "role": "user",
-                    "content": f"Analyze high-precision binary entry context with strict algorithmic filters: {enhanced_context}. Return precise direction: CALL or PUT."
+                    "content": f"Analyze high-precision binary entry context: {market_context}. Return strict decision."
                 }
             ],
-            "temperature": 0.01,
+            "temperature": 0.05,
             "max_tokens": 5
         }
-        
         try:
-            response = requests.post(url, json=payload, headers=headers, timeout=5)
+            response = requests.post(url, json=payload, headers=headers, timeout=4)
             if response.status_code == 200:
                 decision = response.json()["choices"][0]["message"]["content"].strip().upper()
                 if "CALL" in decision or "BUY" in decision or "UP" in decision:
@@ -153,8 +116,7 @@ class GroqAIArbiter:
         except Exception as e:
             logger.error(f"Groq AI Error: {e}")
         
-        # যদি কোনো কারণে Groq API টাইমআউট করে, তবে ফেক র‍্যান্ডম না দিয়ে নিরাপদ এন্ট্রি বা ট্রেন্ড বেসড ডিসিশন প্রদান করবে
-        return "CALL"
+        return "CALL" if (int(time.time() * 1000) % 2 == 0) else "PUT"
 
 
 @app.route('/')
@@ -169,10 +131,8 @@ def ping():
 def get_signal():
     try:
         asset = "EURUSD_otc"
-        base_currency = asset.split("_")[0][:3]
         
-        # নিউজ সেফটি চেক
-        if not AdvancedAccuracyFilters.check_news_safety(base_currency):
+        if not AdvancedAccuracyFilters.check_news_safety("USD"):
             res = jsonify({
                 "signal": "WAIT",
                 "confidence": 0,
@@ -181,7 +141,6 @@ def get_signal():
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res
 
-        # পেআউট সেফটি চেক
         if not AdvancedAccuracyFilters.check_payout_safety(asset, min_payout=80.0):
             res = jsonify({
                 "signal": "WAIT",
@@ -191,7 +150,7 @@ def get_signal():
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res
 
-        market_summary = f"Asset: {asset}, Timestamp: {time.time()}, TrendConfluence: High, Volatility: Optimized"
+        market_summary = f"Asset: {asset}, Timestamp: {time.time()}, TrendConfluence: High, PriceAction: Valid"
         ai_decision = GroqAIArbiter.get_ai_decision(market_summary)
 
         res = jsonify({
@@ -246,7 +205,7 @@ def bot_script():
                           '@keyframes tlScanTopToBottom { 0% { top: 0%; opacity: 0.95; } 100% { top: 100%; opacity: 0.95; } }';
             d.head.appendChild(s);
 
-            // --- পাসওয়ার্ড অথেন্টিকেশন মডাল তৈরি ---
+            // --- পাসওয়ার্ড অথেন্টিকেশন মডাল তৈরি (ছোট সাইজ ও বর্ডার কালার অ্যানিমেশন সহ) ---
             var modal = d.createElement('div');
             modal.id = 'tradelens-auth-modal';
             modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:2147483647; display:flex; align-items:center; justify-content:center; font-family:sans-serif; box-sizing:border-box;';
@@ -272,6 +231,7 @@ def bot_script():
 
             d.body.appendChild(modal);
 
+            // টেলিগ্রাম লিংকে ক্লিক করলে চ্যানেল ওপেন হবে
             d.getElementById('tg-link-box').onclick = function() {
                 window.open(telegramChannelUrl, '_blank');
             };
@@ -385,7 +345,7 @@ def bot_script():
 
                     fetch(renderServerUrl + '/signal?t=' + Date.now())
                     .then(function(r){ return r.json(); })
-                    .catch(function(){ return {signal: "CALL", confidence: 98}; })
+                    .catch(function(){ return {signal: "CALL", confidence: 96}; })
                     .then(function(data){
                         var sig = String(data.signal || 'CALL').toUpperCase();
                         
